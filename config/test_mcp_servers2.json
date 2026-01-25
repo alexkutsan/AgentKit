@@ -1,0 +1,21 @@
+{
+  "openaiApiKey": "csk-trwem4cykn33tmnnd8tftnv94nty5wt5k4kv6vrjf264mtm5",
+  "openaiApiHost": "https://api.cerebras.ai/",
+  "openaiModel": "gpt-oss-120b",
+  "maxIterations": 20,
+  "timeoutSeconds": 120,
+  "logLevel": "debug",
+  "logFile": "./agent.log",
+  "mcpServers": {
+    "filesystem": {
+      "command": "uvx",
+      "args": [
+        "filesystem-operations-mcp",
+        "--root-dir",
+        "/workspaces/crystal_agent",
+        "--mcp-transport",
+        "stdio"
+      ]
+    }
+  }
+}

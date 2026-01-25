@@ -1,0 +1,31 @@
+name: agentish
+version: 0.1.0
+
+description: |
+  Crystal Agent - AI agent library with MCP (Model Context Protocol) support.
+  Use as a library with event-based API or as a CLI tool.
+
+authors:
+  - Your Name <your@email.com>
+
+homepage: https://github.com/your-org/crystal_agent
+repository: https://github.com/your-org/crystal_agent
+documentation: https://github.com/your-org/crystal_agent/blob/main/docs/INTEGRATION_GUIDE.md
+
+crystal: ">= 1.19.0"
+
+license: MIT
+
+dependencies:
+  mcprotocol:
+    github: nobodywasishere/mcprotocol
+
+development_dependencies:
+  webmock:
+    github: manastech/webmock.cr
+  ameba:
+    github: crystal-ameba/ameba
+
+targets:
+  agentish:
+    main: src/main.cr

@@ -1,0 +1,7 @@
+require "spec"
+require "./spec_helper"
+require "./config_spec"
+require "./cli_spec"
+require "./openai/*"
+require "./mcp/*"
+require "./agent/*"

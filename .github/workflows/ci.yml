@@ -1,0 +1,91 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Crystal
+        uses: crystal-lang/install-crystal@v1
+        with:
+          crystal: latest
+
+      - name: Install dependencies
+        run: shards install
+
+      - name: Check formatting
+        run: crystal tool format --check src spec
+
+      - name: Run tests
+        run: crystal spec --tag '~integration' -Dspec
+
+      - name: Install integration test dependencies
+        if: ${{ secrets.OPENAI_API_KEY != '' }}
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y just python3 pipx
+          pipx ensurepath
+          pipx install uv
+
+      - name: Run integration tests
+        if: ${{ secrets.OPENAI_API_KEY != '' }}
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          OPENAI_API_HOST: ${{ secrets.OPENAI_API_HOST }}
+          OPENAI_MODEL: ${{ secrets.OPENAI_MODEL }}
+        run: just test-integration
+
+  lint:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Crystal
+        uses: crystal-lang/install-crystal@v1
+        with:
+          crystal: latest
+
+      - name: Install dependencies
+        run: shards install
+
+      - name: Ameba
+        run: bin/ameba
+
+      - name: Type check
+        run: crystal build --no-codegen src/main.cr
+
+  build-release:
+    runs-on: ubuntu-latest
+    needs: [build, lint]
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Crystal
+        uses: crystal-lang/install-crystal@v1
+        with:
+          crystal: latest
+
+      - name: Install dependencies
+        run: shards install
+
+      - name: Build release binary
+        run: shards build --release
+
+      - name: Upload binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: crystal_agent-linux-x64
+          path: bin/crystal_agent
