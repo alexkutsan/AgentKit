@@ -12,7 +12,7 @@ jobs:
     
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Install Crystal
         uses: crystal-lang/install-crystal@v1
@@ -29,7 +29,6 @@ jobs:
         run: crystal spec --tag '~integration' -Dspec
 
       - name: Install integration test dependencies
-        if: ${{ secrets.OPENAI_API_KEY != '' }}
         run: |
           sudo apt-get update
           sudo apt-get install -y just python3 pipx
@@ -37,7 +36,6 @@ jobs:
           pipx install uv
 
       - name: Run integration tests
-        if: ${{ secrets.OPENAI_API_KEY != '' }}
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           OPENAI_API_HOST: ${{ secrets.OPENAI_API_HOST }}
@@ -49,7 +47,7 @@ jobs:
     
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Install Crystal
         uses: crystal-lang/install-crystal@v1
@@ -71,7 +69,7 @@ jobs:
     
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Install Crystal
         uses: crystal-lang/install-crystal@v1
@@ -85,7 +83,7 @@ jobs:
         run: shards build --release
 
       - name: Upload binary
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: crystal_agent-linux-x64
           path: bin/crystal_agent
