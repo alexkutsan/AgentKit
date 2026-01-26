@@ -3,7 +3,7 @@
 # This is the main entry point for using AgentKit as a library.
 
 require "./agent_kit/config"
-require "./logger"
+require "./agent_kit/logger"
 require "./agent_kit/openai_api/types"
 require "./agent_kit/openai_api/client"
 require "./agent_kit/mcp_client/sse_parser"

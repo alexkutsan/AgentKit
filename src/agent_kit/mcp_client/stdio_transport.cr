@@ -2,7 +2,7 @@ require "json"
 require "io"
 require "process"
 require "atomic"
-require "../../logger"
+require "../logger"
 require "./transport"
 
 module AgentKit::MCPClient

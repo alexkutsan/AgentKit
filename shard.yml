@@ -6,11 +6,11 @@ description: |
   Event-based API for integrating LLM agents into your applications.
 
 authors:
-  - Your Name <your@email.com>
+  - Alexander Kutsan <alexkutsan@gmail.com>
 
-homepage: https://github.com/your-org/agent_kit
-repository: https://github.com/your-org/agent_kit
-documentation: https://github.com/your-org/agent_kit/blob/main/docs/INTEGRATION_GUIDE.md
+homepage: https://github.com/alexkutsan/AgentKit
+repository: https://github.com/alexkutsan/AgentKit
+documentation: https://github.com/alexkutsan/AgentKit/docs
 
 crystal: ">= 1.19.0"
 

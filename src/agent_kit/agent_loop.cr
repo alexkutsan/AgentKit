@@ -1,6 +1,6 @@
 require "json"
 require "./config"
-require "../logger"
+require "./logger"
 require "./openai_api/types"
 require "./openai_api/client"
 require "./mcp_client/manager"

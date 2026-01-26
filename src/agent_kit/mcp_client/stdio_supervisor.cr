@@ -1,6 +1,6 @@
 require "random"
 require "atomic"
-require "../../logger"
+require "../logger"
 require "../config"
 require "./client"
 

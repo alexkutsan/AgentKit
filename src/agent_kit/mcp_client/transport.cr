@@ -1,7 +1,7 @@
 require "http/client"
 require "json"
 require "./sse_parser"
-require "../../logger"
+require "../logger"
 
 module AgentKit::MCPClient
   abstract class Transport

@@ -1,6 +1,6 @@
 require "./client"
 require "./stdio_supervisor"
-require "../../logger"
+require "../logger"
 
 module AgentKit::MCPClient
   Log = AgentKit::Log.for("mcp")
