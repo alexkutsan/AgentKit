@@ -9,7 +9,7 @@ Using AgentKit library in your projects.
 ```yaml
 dependencies:
   agent_kit:
-    github: your-org/agent_kit
+    github: alexkutsan/AgentKit
     version: ~> 0.1.0
 ```
 

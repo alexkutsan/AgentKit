@@ -10,7 +10,7 @@ authors:
 
 homepage: https://github.com/alexkutsan/AgentKit
 repository: https://github.com/alexkutsan/AgentKit
-documentation: https://github.com/alexkutsan/AgentKit/docs
+documentation: https://github.com/alexkutsan/AgentKit/blob/main/docs/INTEGRATION_GUIDE.md
 
 crystal: ">= 1.19.0"
 
