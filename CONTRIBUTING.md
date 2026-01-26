@@ -8,7 +8,7 @@ Thanks for your interest in contributing!
 
 - Crystal (see `shard.yml` for the minimum version)
 - `shards`
-- Optional (for integration/e2e tests): `just`, `python3`, `pipx`, `uv`
+- Optional (for integration tests): `just`, `python3`, `pipx`, `uv`
 
 ### Install dependencies
 

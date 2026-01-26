@@ -16,10 +16,7 @@
 *.log
 /tmp/
 
-# Config with secrets
-/config/test_mcp_servers.json
-
- # Env files with secrets
+# Env files with secrets
 /.env
 
 # Python (for test MCP server)
@@ -42,11 +39,6 @@ scripts/mcp_test_server/uv.lock
 # OS
 .DS_Store
 Thumbs.db
-
-# Test artifacts
-/scripts/test_prompts/
-/crystal_agent_e2e_results/
-/bin/agentish
 
 # Code coverage
 /coverage/

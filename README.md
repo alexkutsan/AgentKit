@@ -1,174 +1,207 @@
-# Crystal Agent
+# AgentKit
 
-LLM agent with MCP (Model Context Protocol) server support.
+Crystal library for building AI agents with MCP (Model Context Protocol) support.
 
 ## Installation
+
+Add to your `shard.yml`:
+
+```yaml
+dependencies:
+  agent_kit:
+    github: your-org/agent_kit
+    version: ~> 0.1.0
+```
+
+Then run:
+
+```bash
+shards install
+```
 
 ### Requirements
 
 - Crystal >= 1.19.0
 - OpenAI API key (or compatible provider)
 
-### Build from source
-
-```bash
-git clone https://github.com/your-org/crystal_agent.git
-cd crystal_agent
-shards install
-shards build --release
-```
-
-Binary will be at `./bin/crystal_agent`.
-
 ---
 
 ## Quick Start
 
-### 1. Create configuration
+```crystal
+require "agent_kit"
 
-```bash
-mkdir -p ~/.config/crystal_agent
-cat > ~/.config/crystal_agent/config.json << 'EOF'
-{
-  "openaiApiKey": "sk-your-api-key-here",
-  "openaiModel": "gpt-4o"
-}
-EOF
+# Create configuration
+config = AgentKit::Config.new(
+  openai_api_key: ENV["OPENAI_API_KEY"],
+  openai_model: "gpt-4o"
+)
+
+# Create and run agent
+agent = AgentKit::Agent.new(config)
+
+begin
+  agent.setup
+  result = agent.run("Hello! How are you?")
+  puts result
+ensure
+  agent.cleanup
+end
 ```
 
-### 2. Run the agent
+### With MCP Server
 
-```bash
-./bin/crystal_agent -p "Hello! How are you?"
+```crystal
+require "agent_kit"
+
+config = AgentKit::Config.new(
+  openai_api_key: ENV["OPENAI_API_KEY"],
+  mcp_servers: {
+    "tools" => AgentKit::MCPServerConfig.new(
+      type: "http",
+      url: "http://localhost:8000/mcp"
+    )
+  }
+)
+
+agent = AgentKit::Agent.new(config)
+
+begin
+  agent.setup
+  result = agent.run("Use the add_numbers tool to add 15 and 27")
+  puts result
+ensure
+  agent.cleanup
+end
 ```
 
----
+### With Event Handling
 
-## Usage
+```crystal
+require "agent_kit"
 
-```bash
-# Direct prompt
-./bin/crystal_agent -p "Your question"
+config = AgentKit::Config.new(openai_api_key: ENV["OPENAI_API_KEY"])
+agent = AgentKit::Agent.new(config)
 
-# Prompt from file
-./bin/crystal_agent prompt.txt
-
-# Output to file
-./bin/crystal_agent -p "Generate a list" -o result.txt
-
-# Interactive mode
-./bin/crystal_agent -i
-
-# Specify config
-./bin/crystal_agent -p "Question" -c /path/to/config.json
+begin
+  agent.setup
+  
+  result = agent.run("Your prompt here") do |event|
+    case event
+    when AgentKit::BeforeMCPCallEvent
+      puts "Calling tool: #{event.tool_name}"
+    when AgentKit::AfterMCPCallEvent
+      puts "Tool result: #{event.result}"
+    when AgentKit::AgentErrorEvent
+      puts "Error: #{event.message}"
+    end
+  end
+  
+  puts result
+ensure
+  agent.cleanup
+end
 ```
-
-### Options
-
-| Option | Description |
-|--------|-------------|
-| `-p, --prompt` | Prompt text |
-| `-o, --output` | Output file (default: stdout) |
-| `-c, --config` | Config file path |
-| `-i, --interactive` | Interactive mode (REPL) |
-| `-h, --help` | Show help |
-| `-v, --version` | Show version |
 
 ---
 
 ## Configuration
 
-Agent looks for config in:
-1. `~/.config/crystal_agent/config.json`
-2. `~/.crystal_agent.json`
+```crystal
+config = AgentKit::Config.new(
+  openai_api_key: "sk-...",           # Required
+  openai_api_host: "https://api.openai.com",  # Default
+  openai_model: "gpt-4o",             # Default
+  max_iterations: 10,                 # Default
+  timeout_seconds: 120,               # Default
+  mcp_servers: {} of String => AgentKit::MCPServerConfig
+)
 
-### Minimal config
-
-```json
-{
-  "openaiApiKey": "sk-..."
-}
-```
-
-### Full config
-
-```json
-{
-  "openaiApiKey": "sk-...",
-  "openaiApiHost": "https://api.openai.com",
-  "openaiModel": "gpt-4o",
-  "maxIterations": 10,
-  "timeoutSeconds": 120,
-  "mcpServers": {
-    "my-server": {
-      "type": "http",
-      "url": "http://localhost:8000/mcp"
-    }
-  }
-}
+config.validate!  # Raises ConfigError if invalid
 ```
 
 | Parameter | Description | Default |
 |-----------|-------------|---------|
-| `openaiApiKey` | API key (required) | — |
-| `openaiApiHost` | API URL | `https://api.openai.com` |
-| `openaiModel` | Model | `gpt-4o` |
-| `maxIterations` | Max iterations | `10` |
-| `timeoutSeconds` | Timeout (sec) | `120` |
-| `mcpServers` | MCP servers | `{}` |
-
-**Logging** is configured via ENV: `CRYSTAL_AGENT_LOG_LEVEL` (debug/info/warn/error, default `warn`) and `CRYSTAL_AGENT_LOG_FILE`.
+| `openai_api_key` | API key (required) | — |
+| `openai_api_host` | API URL | `https://api.openai.com` |
+| `openai_model` | Model | `gpt-4o` |
+| `max_iterations` | Max agent iterations | `10` |
+| `timeout_seconds` | Request timeout (sec) | `120` |
+| `mcp_servers` | MCP servers | `{}` |
 
 ---
 
 ## MCP Servers
 
-Agent can connect to MCP servers to use external tools.
+### HTTP Transport
 
-HTTP config without `"type": "http"` is considered invalid. Environment variables can be used as `${VAR}` or `${VAR:-default}`.
-
-```json
-{
-  "openaiApiKey": "sk-...",
-  "mcpServers": {
-    "filesystem": {
-      "type": "http",
-      "url": "http://localhost:8000/mcp"
-    },
-    "database": {
-      "type": "http",
-      "url": "http://localhost:8001/mcp",
-      "headers": {
-        "Authorization": "Bearer token"
-      }
-    }
+```crystal
+config = AgentKit::Config.new(
+  openai_api_key: "sk-...",
+  mcp_servers: {
+    "filesystem" => AgentKit::MCPServerConfig.new(
+      type: "http",
+      url: "http://localhost:8000/mcp"
+    ),
+    "database" => AgentKit::MCPServerConfig.new(
+      type: "http",
+      url: "http://localhost:8001/mcp",
+      headers: {"Authorization" => "Bearer token"}
+    )
   }
-}
+)
 ```
 
-### Stdio MCP server (local process)
+### Stdio Transport (local process)
 
-```json
-{
-  "openaiApiKey": "sk-...",
-  "mcpServers": {
-    "local-tools": {
-      "command": "python3",
-      "args": ["-u", "/path/to/mcp_server.py"]
-    }
+```crystal
+config = AgentKit::Config.new(
+  openai_api_key: "sk-...",
+  mcp_servers: {
+    "local-tools" => AgentKit::MCPServerConfig.new(
+      command: "python3",
+      args: ["-u", "/path/to/mcp_server.py"],
+      env: {"TOKEN" => "secret"}
+    )
   }
-}
+)
 ```
 
-On startup, the agent automatically connects to servers and registers available tools.
+---
+
+## Events
+
+| Event | Description | Fields |
+|-------|-------------|--------|
+| `BeforeMCPCallEvent` | Before MCP tool call | `tool_name`, `arguments` |
+| `AfterMCPCallEvent` | After MCP tool call | `tool_name`, `result`, `error?` |
+| `BeforeLLMCallEvent` | Before LLM request | `messages`, `tools` |
+| `AfterLLMCallEvent` | After LLM response | `response`, `final?` |
+| `AgentCompletedEvent` | Agent finished | `result` |
+| `AgentErrorEvent` | Error occurred | `error`, `message` |
+
+Events auto-continue by default. Call `event.stop!` to halt the agent.
+
+---
+
+## Provider Compatibility
+
+Compatible with any OpenAI-compatible API:
+
+| Provider | `openai_api_host` |
+|----------|-----------------|
+| OpenAI | `https://api.openai.com` |
+| Azure OpenAI | `https://{resource}.openai.azure.com` |
+| Ollama | `http://localhost:11434` |
+| OpenRouter | `https://openrouter.ai/api` |
+| Together AI | `https://api.together.xyz` |
 
 ---
 
 ## Documentation
 
-- [USER_GUIDE.md](docs/USER_GUIDE.md) — detailed user guide
-- [DEVELOPERS_GUIDE.md](docs/DEVELOPERS_GUIDE.md) — for project contributors
-- [INTEGRATION_GUIDE.md](docs/INTEGRATION_GUIDE.md) — using as a library
+- [INTEGRATION_GUIDE.md](docs/INTEGRATION_GUIDE.md) — detailed API reference
+- [DEVELOPERS_GUIDE.md](docs/DEVELOPERS_GUIDE.md) — for library contributors
 
 ---
 

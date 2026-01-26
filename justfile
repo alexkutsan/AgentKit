@@ -1,4 +1,4 @@
-# Crystal Agent - Development Recipes
+# AgentKit - Development Recipes
 # Usage: just <recipe>
 
 # Default recipe - show help
@@ -6,83 +6,26 @@ default:
     @just --list
 
 # ============================================
-# Build & Run
-# ============================================
-
-# Build the project
-build:
-    shards build
-
-# Build in release mode
-build-release:
-    shards build --release
-
-# ============================================
 # Testing
 # ============================================
 
-# Run all tests (excluding integration)
+# Run all unit tests
 test:
-    crystal spec --tag '~integration' --verbose --fail-fast -Dspec
+    crystal spec --tag '~integration' --tag '~integration_stdio' --verbose --fail-fast
 
 # Run integration tests (starts MCP server automatically)
 test-integration: test-integration-http test-integration-stdio
 
 # Run integration tests (http streamable; starts MCP server automatically)
-test-integration-http: (_with-mcp-test-server "crystal spec --tag integration --fail-fast -Dspec")
+test-integration-http: (_with-mcp-test-server "crystal spec --tag integration --fail-fast")
 
 # Run integration tests (stdio; spawns server as subprocess inside specs)
 test-integration-stdio:
-    crystal spec --tag integration_stdio --fail-fast -Dspec
-
-# Run E2E tests (starts MCP server automatically)
-test-e2e: build (_with-mcp-test-server "./scripts/e2e_test.sh")
+    crystal spec --tag integration_stdio --fail-fast
 
 # Run all tests
-test-all: test test-integration test-e2e
+test-all: test test-integration
 
-# Run tests with code coverage (requires kcov)
-# Note: In containers, requires --cap-add=SYS_PTRACE (see devcontainer.json)
-test-coverage:
-    #!/bin/bash
-    set -e
-    
-    # Check if kcov is installed
-    if ! command -v kcov &> /dev/null; then
-        echo "Error: kcov is not installed."
-        echo "Install with: sudo apt-get install kcov"
-        echo "Or build from source: https://github.com/SimonKagstrom/kcov"
-        exit 1
-    fi
-    
-    echo "Building spec binary with debug info..."
-    crystal build spec/spec_runner.cr -o bin/spec_runner -Dspec --debug
-    
-    echo "Running tests with kcov..."
-    rm -rf coverage
-    
-    # Try to run kcov, provide helpful error if ptrace fails
-    if ! kcov --include-path=src coverage bin/spec_runner 2>&1; then
-        echo ""
-        echo "Error: kcov failed. If you see 'Can't set personality' error,"
-        echo "you need to rebuild the devcontainer to enable SYS_PTRACE."
-        echo "Run: 'Rebuild Container' from VS Code command palette."
-        exit 1
-    fi
-    
-    echo ""
-    echo "Coverage report generated in coverage/index.html"
-    echo "Open: file://$(pwd)/coverage/index.html"
-
-# View coverage report (opens in browser if available)
-coverage-report:
-    @if [ -f coverage/index.html ]; then \
-        echo "Coverage report: file://$(pwd)/coverage/index.html"; \
-        which xdg-open > /dev/null && xdg-open coverage/index.html || true; \
-    else \
-        echo "No coverage report found. Run 'just test-coverage' first."; \
-    fi 
-    
 # Start test MCP server (for development)
 mcp-test-server:
     #!/bin/bash
@@ -172,7 +115,7 @@ lint:
 
 # Type check without building
 check:
-    crystal build --no-codegen src/main.cr
+    crystal build --no-codegen src/agent_kit.cr
 
 # ============================================
 # Git Workflow (Stage Commits)
@@ -185,4 +128,4 @@ clean:
     rm -rf .shards/
 
 # Clean and rebuild
-rebuild: clean deps build
+rebuild: clean deps

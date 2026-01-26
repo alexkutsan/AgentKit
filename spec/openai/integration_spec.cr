@@ -4,20 +4,13 @@ require "../../src/agent_kit/openai_api/client"
 require "../../src/agent_kit/config"
 require "webmock"
 
-TEST_CONFIG_PATH_OPENAI = "config/test_mcp_servers.json.disabled"
-
 def get_test_config : AgentKit::Config?
-  if File.exists?(TEST_CONFIG_PATH_OPENAI)
-    config = Agentish.load_config(TEST_CONFIG_PATH_OPENAI)
-    config.openai_api_key.empty? ? nil : config
-  else
-    key = ENV["OPENAI_API_KEY"]?
-    return nil if key.nil? || key.empty?
+  key = ENV["OPENAI_API_KEY"]?
+  return nil if key.nil? || key.empty?
 
-    api_host = ENV["OPENAI_API_HOST"]? || "https://api.openai.com"
-    model = ENV["OPENAI_MODEL"]? || "gpt-4o"
-    AgentKit::Config.new(openai_api_key: key, openai_api_host: api_host, openai_model: model)
-  end
+  api_host = ENV["OPENAI_API_HOST"]? || "https://api.openai.com"
+  model = ENV["OPENAI_MODEL"]? || "gpt-4o"
+  AgentKit::Config.new(openai_api_key: key, openai_api_host: api_host, openai_model: model)
 rescue
   nil
 end

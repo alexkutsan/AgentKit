@@ -1,7 +1,6 @@
 # AgentKit - AI agent library with MCP support
 #
 # This is the main entry point for using AgentKit as a library.
-# For CLI usage, see src/main.cr
 
 require "./agent_kit/config"
 require "./logger"

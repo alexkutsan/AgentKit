@@ -1,6 +1,6 @@
-# Crystal Agent — Integration Guide
+# AgentKit — Integration Guide
 
-Using Crystal Agent as a library in your projects.
+Using AgentKit library in your projects.
 
 ## Installation
 
@@ -8,8 +8,8 @@ Using Crystal Agent as a library in your projects.
 
 ```yaml
 dependencies:
-  crystal_agent:
-    github: your-org/crystal_agent
+  agent_kit:
+    github: your-org/agent_kit
     version: ~> 0.1.0
 ```
 
@@ -106,7 +106,7 @@ config.validate!  # Raises ConfigError if invalid
 ### OpenAI Client
 
 ```crystal
-client = CrystalAgent::OpenAIApi::Client.new(
+client = AgentKit::OpenAIApi::Client.new(
   api_key: "sk-...",
   api_host: "https://api.openai.com",
   model: "gpt-4o"
@@ -114,8 +114,8 @@ client = CrystalAgent::OpenAIApi::Client.new(
 
 # Simple request
 messages = [
-  CrystalAgent::OpenAIApi::ChatMessage.system("You are a helpful assistant."),
-  CrystalAgent::OpenAIApi::ChatMessage.user("Hello!")
+  AgentKit::OpenAIApi::ChatMessage.system("You are a helpful assistant."),
+  AgentKit::OpenAIApi::ChatMessage.user("Hello!")
 ]
 
 response = client.chat_completion(messages: messages)
@@ -125,9 +125,9 @@ puts response.choices[0].message.content
 #### With Tools
 
 ```crystal
-tool = CrystalAgent::OpenAIApi::Tool.new(
+tool = AgentKit::OpenAIApi::Tool.new(
   type: "function",
-  function: CrystalAgent::OpenAIApi::FunctionDef.new(
+  function: AgentKit::OpenAIApi::FunctionDef.new(
     name: "get_weather",
     description: "Get weather for a location",
     parameters: JSON.parse(%q({
@@ -156,8 +156,8 @@ end
 
 ```crystal
 # Connect to MCP server
-config = CrystalAgent::MCPServerConfig.new(type: "http", url: "http://localhost:8000/mcp")
-client = CrystalAgent::MCPClient::Client.new("my-server", config)
+config = AgentKit::MCPServerConfig.new(type: "http", url: "http://localhost:8000/mcp")
+client = AgentKit::MCPClient::Client.new("my-server", config)
 client.connect
 
 # Get list of tools
@@ -177,13 +177,13 @@ client.close
 #### Stdio MCP Client
 
 ```crystal
-config = CrystalAgent::MCPServerConfig.new(
+config = AgentKit::MCPServerConfig.new(
   command: "python3",
   args: ["-u", "/path/to/mcp_server.py"],
   env: {"TOKEN" => "${TOKEN:-default}"}
 )
 
-client = CrystalAgent::MCPClient::Client.new("local-tools", config)
+client = AgentKit::MCPClient::Client.new("local-tools", config)
 client.connect
 tools = client.list_tools
 client.close
@@ -194,7 +194,7 @@ client.close
 Managing multiple MCP servers:
 
 ```crystal
-manager = CrystalAgent::MCPClient::Manager.new
+manager = AgentKit::MCPClient::Manager.new
 
 manager.add_server("filesystem", "http://localhost:8000/mcp")
 manager.add_server("database", "http://localhost:8001/mcp", {
@@ -223,7 +223,7 @@ manager.close_all
 Converting MCP tools to OpenAI format:
 
 ```crystal
-registry = CrystalAgent::ToolRegistry.new
+registry = AgentKit::ToolRegistry.new
 
 # Register tools
 mcp_tools = client.list_tools
@@ -244,7 +244,7 @@ registry.has_tool?("my-server__add_numbers")  # => true
 ### Message History
 
 ```crystal
-history = CrystalAgent::MessageHistory.new
+history = AgentKit::MessageHistory.new
 
 history.add_system("You are a helpful assistant.")
 history.add_user("Hello!")
@@ -252,9 +252,9 @@ history.add_assistant("Hi there!")
 
 # Tool calls
 tool_calls = [
-  CrystalAgent::OpenAIApi::ToolCall.new(
+  AgentKit::OpenAIApi::ToolCall.new(
     id: "call_123",
-    function: CrystalAgent::OpenAIApi::FunctionCall.new(
+    function: AgentKit::OpenAIApi::FunctionCall.new(
       name: "get_weather",
       arguments: %q({"location": "Moscow"})
     )
@@ -270,13 +270,13 @@ messages = history.to_messages
 ### Agent
 
 ```crystal
-config = CrystalAgent::Config.from_file("config.json")
+config = AgentKit::Config.new(openai_api_key: ENV["OPENAI_API_KEY"])
 
 # With custom system prompt (optional)
-agent = CrystalAgent::Agent.new(config, "You are a specialized assistant.")
+agent = AgentKit::Agent.new(config, "You are a specialized assistant.")
 
 # Or without system prompt (uses default)
-agent = CrystalAgent::Agent.new(config)
+agent = AgentKit::Agent.new(config)
 
 begin
   agent.setup  # Connect to MCP, register tools
@@ -320,13 +320,13 @@ agent.cleanup
 ```crystal
 begin
   response = client.chat_completion(messages: messages)
-rescue ex : CrystalAgent::OpenAIApi::AuthenticationError
+rescue ex : AgentKit::OpenAIApi::AuthenticationError
   puts "Invalid API key"
-rescue ex : CrystalAgent::OpenAIApi::RateLimitError
+rescue ex : AgentKit::OpenAIApi::RateLimitError
   puts "Rate limit exceeded"
-rescue ex : CrystalAgent::OpenAIApi::BadRequestError
+rescue ex : AgentKit::OpenAIApi::BadRequestError
   puts "Bad request: #{ex.message}"
-rescue ex : CrystalAgent::OpenAIApi::ServerError
+rescue ex : AgentKit::OpenAIApi::ServerError
   puts "Server error"
 end
 ```
@@ -336,7 +336,7 @@ end
 ```crystal
 begin
   result = client.call_tool("my_tool", args)
-rescue ex : CrystalAgent::MCPClient::MCPError
+rescue ex : AgentKit::MCPClient::MCPError
   puts "MCP error: #{ex.message}"
 end
 ```
@@ -345,9 +345,9 @@ end
 
 ```crystal
 begin
-  config = CrystalAgent::Config.from_file("config.json")
+  config = AgentKit::Config.new(openai_api_key: ENV["OPENAI_API_KEY"])
   config.validate!
-rescue ex : CrystalAgent::ConfigError
+rescue ex : AgentKit::ConfigError
   puts "Config error: #{ex.message}"
 end
 ```
@@ -356,26 +356,16 @@ end
 
 ## Logging
 
-When using Crystal Agent as a library, you manage logging yourself:
+AgentKit uses Crystal's standard `Log` module. Configure logging as needed:
 
 ```crystal
 # Setup log level
-CrystalAgent.setup_logging(CrystalAgent::LogLevel::Debug)
-
-# With file output
-CrystalAgent.setup_logging(CrystalAgent::LogLevel::Info, "/var/log/agent.log")
+Log.setup(:debug, Log::IOBackend.new)
 
 # Using the logger
-CrystalAgent::Log.info { "Starting agent" }
-CrystalAgent::Log.debug { "Debug info" }
-
-# Close (important to call on shutdown)
-CrystalAgent.close_logging
+AgentKit::Log.info { "Starting agent" }
+AgentKit::Log.debug { "Debug info" }
 ```
-
-> **Note**: Logging is not part of the agent configuration (`Config`).
-> CLI uses environment variables `CRYSTAL_AGENT_LOG_LEVEL` and `CRYSTAL_AGENT_LOG_FILE`.
-> When using as a library — call `setup_logging` yourself.
 
 ---
 
@@ -384,7 +374,7 @@ CrystalAgent.close_logging
 ### Custom Agent
 
 ```crystal
-class MyAgent < CrystalAgent::Agent
+class MyAgent < AgentKit::Agent
   private def build_system_prompt : String
     "You are a specialized assistant. Always respond in JSON."
   end
@@ -419,17 +409,17 @@ Call `event.stop!` to halt the agent.
 ```crystal
 result = agent.run(prompt) do |event|
   case event
-  when CrystalAgent::BeforeMCPCallEvent
+  when AgentKit::BeforeMCPCallEvent
     Log.info { "[MCP CALL] #{event.tool_name}(#{event.arguments})" }
-  when CrystalAgent::AfterMCPCallEvent
+  when AgentKit::AfterMCPCallEvent
     if event.error?
       Log.error { "[MCP ERROR] #{event.tool_name}: #{event.result}" }
     else
       Log.info { "[MCP RESULT] #{event.tool_name}: #{event.result}" }
     end
-  when CrystalAgent::AgentCompletedEvent
+  when AgentKit::AgentCompletedEvent
     Log.info { "Agent completed" }
-  when CrystalAgent::AgentErrorEvent
+  when AgentKit::AgentErrorEvent
     Log.error { "Agent error: #{event.message}" }
   end
 end
@@ -440,7 +430,7 @@ end
 ```crystal
 result = agent.run(prompt) do |event|
   case event
-  when CrystalAgent::BeforeMCPCallEvent
+  when AgentKit::BeforeMCPCallEvent
     if event.tool_name.includes?("dangerous")
       puts "Blocking dangerous tool call!"
       event.stop!  # Stop the agent
@@ -503,7 +493,7 @@ end
 ```crystal
 require "spec"
 require "webmock"
-require "crystal_agent"
+require "agent_kit"
 
 describe "MyApp" do
   before_each { WebMock.reset }
@@ -523,8 +513,8 @@ describe "MyApp" do
         usage: {prompt_tokens: 10, completion_tokens: 5, total_tokens: 15}
       }.to_json)
 
-    client = CrystalAgent::OpenAIApi::Client.new(api_key: "test")
-    messages = [CrystalAgent::OpenAIApi::ChatMessage.user("Hi")]
+    client = AgentKit::OpenAIApi::Client.new(api_key: "test")
+    messages = [AgentKit::OpenAIApi::ChatMessage.user("Hi")]
     
     response = client.chat_completion(messages: messages)
     response.choices[0].message.content.should eq("Hello!")

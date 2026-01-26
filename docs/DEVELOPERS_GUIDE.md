@@ -1,40 +1,37 @@
-# Crystal Agent — Developer Guide
+# AgentKit — Developer Guide
 
-Documentation for contributors and developers working on the project.
+Documentation for contributors and developers working on the library.
 
 ## Architecture
 
 ```
 src/
-├── crystal_agent.cr      # Library entry point
-├── main.cr               # CLI entry point
-├── config.cr             # Configuration
+├── agent_kit.cr          # Library entry point
 ├── logger.cr             # Logging
-├── openai/               # OpenAI API client
-│   ├── client.cr         # HTTP client
-│   └── types.cr          # Data types
-├── mcp/                  # MCP client
-│   ├── client.cr         # Single server client
-│   ├── manager.cr        # Server management
-│   ├── transport.cr      # Transport interface + HTTP transport
-│   ├── sse_parser.cr     # SSE parser
-│   ├── stdio_transport.cr # Stdio transport
-│   ├── stdio_supervisor.cr # Stdio supervisor (auto-restart)
-│   └── types.cr          # Data types
-└── agent/                # Agent
-    ├── agent.cr          # Main class
-    ├── events.cr         # Agent events
-    ├── tool_registry.cr  # Tool registry
-    └── message_history.cr # Message history
+├── agent_kit/
+│   ├── config.cr         # Configuration
+│   ├── events.cr         # Agent events
+│   ├── agent_loop.cr     # Agent main class
+│   ├── tool_registry.cr  # Tool registry
+│   ├── message_history.cr # Message history
+│   ├── openai_api/       # OpenAI API client
+│   │   ├── client.cr     # HTTP client
+│   │   └── types.cr      # Data types
+│   └── mcp_client/       # MCP client
+│       ├── client.cr     # Single server client
+│       ├── manager.cr    # Server management
+│       ├── transport.cr  # Transport interface + HTTP transport
+│       ├── sse_parser.cr # SSE parser
+│       └── types.cr      # Data types
 ```
 
 ---
 
 ## Main Components
 
-### Config (`src/config.cr`)
+### Config (`src/agent_kit/config.cr`)
 
-Loading and validating configuration from JSON file.
+Configuration management.
 
 - **`Config`** — main configuration class
 - **`MCPServerConfig`** — MCP server configuration:
@@ -43,7 +40,7 @@ Loading and validating configuration from JSON file.
 - **`LogLevel`** — log level enum
 - **`ConfigError`** — configuration error exception
 
-### OpenAI (`src/openai/`)
+### OpenAI (`src/agent_kit/openai_api/`)
 
 Client for OpenAI-compatible API.
 
@@ -55,7 +52,7 @@ Client for OpenAI-compatible API.
 
 **Exceptions:** `AuthenticationError`, `RateLimitError`, `BadRequestError`, `ServerError`
 
-### MCP (`src/mcp/`)
+### MCP (`src/agent_kit/mcp_client/`)
 
 Client for MCP servers (HTTP Streamable transport + stdio transport).
 
@@ -75,14 +72,14 @@ Client for MCP servers (HTTP Streamable transport + stdio transport).
 
 **Stdio:** JSON-RPC over stdin/stdout (JSONL), auto-restart via `StdioSupervisor`.
 
-### Agent (`src/agent/`)
+### Agent (`src/agent_kit/`)
 
 Main agent combining LLM and MCP.
 
-- **`Agent`** — main class with `setup`, `run`, `run_continue`, `cleanup` methods
-- **`AgentEvent`** — base event class (and subclasses: `BeforeMCPCallEvent`, `AfterMCPCallEvent`, etc.)
-- **`ToolRegistry`** — MCP tools to OpenAI format conversion
-- **`MessageHistory`** — message history management
+- **`Agent`** (`agent_loop.cr`) — main class with `setup`, `run`, `run_continue`, `cleanup` methods
+- **`AgentEvent`** (`events.cr`) — base event class (and subclasses: `BeforeMCPCallEvent`, `AfterMCPCallEvent`, etc.)
+- **`ToolRegistry`** (`tool_registry.cr`) — MCP tools to OpenAI format conversion
+- **`MessageHistory`** (`message_history.cr`) — message history management
 
 **Agent Loop:**
 1. Emit `BeforeLLMCallEvent`
@@ -124,7 +121,6 @@ development_dependencies:
 - `HTTP::Client` — HTTP requests
 - `JSON` — serialization
 - `Log` — logging
-- `OptionParser` — CLI arguments
 
 ---
 
@@ -136,7 +132,6 @@ development_dependencies:
 spec/
 ├── spec_helper.cr
 ├── config_spec.cr
-├── logger_spec.cr
 ├── openai/
 │   ├── types_spec.cr
 │   ├── client_spec.cr
@@ -144,14 +139,8 @@ spec/
 ├── mcp/
 │   ├── sse_parser_spec.cr
 │   ├── transport_spec.cr
-│   ├── stdio_transport_spec.cr
-│   ├── stdio_supervisor_spec.cr
 │   ├── client_spec.cr
 │   └── manager_spec.cr
-├── mcp_integration/           # tag: integration
-│   ├── mcp_integration_spec.cr
-│   ├── stdio_integration_spec.cr  # tag: integration_stdio
-│   └── agent_integration_spec.cr
 └── agent/
     ├── agent_spec.cr
     ├── events_spec.cr
@@ -162,36 +151,15 @@ spec/
 ### Commands
 
 ```bash
-# Unit tests (without integration)
+# Unit tests
 just test
 
 # Integration tests (requires MCP server)
 just test-integration
 
-# E2E tests (shell script)
-just test-e2e
-
 # All tests
 just test-all
-
-# Tests with code coverage (requires kcov)
-just test-coverage
-
-# View coverage report
-just coverage-report
 ```
-
-### Code Coverage
-
-The project uses [kcov](https://github.com/SimonKagstrom/kcov) for code coverage measurement.
-
-```bash
-just test-coverage
-```
-
-Report is generated in `coverage/index.html`.
-
-**Note:** In containers, kcov requires `--cap-add=SYS_PTRACE`. This is already configured in `devcontainer.json`. If coverage doesn't work, rebuild the container.
 
 ### Unit Tests
 
@@ -224,13 +192,11 @@ just test-integration-stdio
 ### justfile Commands
 
 ```bash
-just build          # Build
-just build-release  # Release build
 just test           # Unit tests
 just test-all       # All tests
 just fmt            # Format
 just fmt-check      # Check formatting
-just check          # Type check without build
+just check          # Type check
 just deps           # Install dependencies
 just clean          # Clean artifacts
 ```
@@ -254,7 +220,7 @@ just clean          # Clean artifacts
 
 - **Formatting:** `crystal tool format`
 - **Naming:** snake_case for methods/variables, PascalCase for types
-- **Logging:** use `CrystalAgent::Log`
+- **Logging:** use `AgentKit::Log`
 - **Errors:** create specific Exception classes
 - **JSON:** use `JSON::Serializable` for types
 
