@@ -1,8 +1,10 @@
 require "json"
+require "yaml"
 
 module AgentKit
   struct MCPServerConfig
     include JSON::Serializable
+    include YAML::Serializable
 
     property type : String?
     property url : String?
@@ -30,21 +32,46 @@ module AgentKit
     end
   end
 
-  class Config
-    getter openai_api_key : String
-    getter openai_api_host : String
-    getter openai_model : String
-    getter max_iterations : Int32
-    getter timeout_seconds : Int32
-    property mcp_servers : Hash(String, MCPServerConfig)
+  struct Config
+    include JSON::Serializable
+    include YAML::Serializable
+
+    @[YAML::Field(key: "openai_api_key")]
+    @[JSON::Field(key: "openai_api_key")]
+    getter openai_api_key : String = ""
+
+    @[YAML::Field(key: "openai_api_host")]
+    @[JSON::Field(key: "openai_api_host")]
+    getter openai_api_host : String = "https://api.openai.com"
+
+    @[YAML::Field(key: "openai_model")]
+    @[JSON::Field(key: "openai_model")]
+    getter openai_model : String = "gpt-4o"
+
+    @[YAML::Field(key: "max_iterations")]
+    @[JSON::Field(key: "max_iterations")]
+    getter max_iterations : Int32 = 10
+
+    @[YAML::Field(key: "timeout_seconds")]
+    @[JSON::Field(key: "timeout_seconds")]
+    getter timeout_seconds : Int32 = 120
+
+    @[YAML::Field(key: "mcp_servers")]
+    @[JSON::Field(key: "mcp_servers")]
+    property mcp_servers : Hash(String, MCPServerConfig) = {} of String => MCPServerConfig
+
+    @[YAML::Field(key: "mcp_servers_json_path")]
+    @[JSON::Field(key: "mcp_servers_json_path", ignore: true)]
+    getter mcp_servers_json_path : String? = nil
 
     def initialize(
-      @openai_api_key : String,
+      @openai_api_key : String = "",
       @openai_api_host : String = "https://api.openai.com",
       @openai_model : String = "gpt-4o",
       @max_iterations : Int32 = 10,
       @timeout_seconds : Int32 = 120,
       @mcp_servers : Hash(String, MCPServerConfig) = {} of String => MCPServerConfig,
+      @mcp_servers_json_path : String? = nil,
     )
     end
 
