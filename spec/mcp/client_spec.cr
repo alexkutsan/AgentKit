@@ -110,7 +110,7 @@ describe AgentKit::MCPClient::Client do
       client.transport.as(AgentKit::MCPClient::HttpTransport).session_id = "session-123"
 
       result = client.call_tool("add_numbers", JSON.parse(%q({"a": 5, "b": 3})))
-      result.content.size.should eq(1)
+      result.content.try(&.size).should eq(1)
       result.text_content.should eq("8")
     end
   end

@@ -99,7 +99,7 @@ describe AgentKit::MCPClient::Manager do
       manager.add_server("myserver", AgentKit::MCPServerConfig.new(type: "http", url: "http://localhost:8001/mcp"))
 
       result = manager.call_tool("myserver__mytool", JSON.parse("{}"))
-      result.content.size.should eq(1)
+      result.content.try(&.size).should eq(1)
       result.text_content.should eq("result")
     end
 
